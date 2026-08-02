@@ -1,0 +1,31 @@
+.venv/
+.collections/
+.ansible/
+__pycache__/
+.DS_Store
+*.retry
+*.pem
+*.key
+.env
+.env.*
+vault-password*
+backups/
+evidence/
+reference/inventory/hosts.yml
+reference/inventory/host_vars/
+# Encrypt this file before explicitly adding it with git add -f.
+reference/inventory/group_vars/cloud/vault.yml
+
+# Cloud-1 specific secrets and local artifacts
+cloud-1/ansible/inventories/group_vars/all/vault.yml
+cloud-1/ansible/inventories/hosts.yml
+cloud-1/azure/parameters.json
+cloud-1/certs/
+*.tmp*
+*.log
+
+
+.tools/
+cloud1-integration-*/
+cloud-1/.tmp_tls_test/
+cloud-1/examples/vault.local-test.yml
