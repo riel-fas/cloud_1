@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inception AI</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#FF6B35"/>
+                    <path d="M10 8h2v16h-2zM15 12h7v2h-7zM15 18h7v2h-7z" fill="#fff"/>
+                </svg>
+                <span>Inception AI</span>
+            </div>
+            <button class="clear-btn" id="clear-btn" title="New chat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                <span>New Chat</span>
+            </button>
+        </header>
+
+        <!-- Chat Area -->
+        <main class="chat" id="chat">
+            <!-- Welcome state -->
+            <div class="welcome" id="welcome">
+                <div class="welcome-icon">
+                    <svg viewBox="0 0 48 48" fill="none">
+                        <rect width="48" height="48" rx="12" fill="#FF6B35" opacity="0.1"/>
+                        <rect x="4" y="4" width="40" height="40" rx="10" fill="#FF6B35" opacity="0.15"/>
+                        <path d="M16 14h3v20h-3zM23 19h9v3h-9zM23 27h9v3h-9z" fill="#FF6B35"/>
+                    </svg>
+                </div>
+                <h1>Inception AI</h1>
+                <p>Ask me anything about the 42 Inception project — Docker, services, configuration, architecture, and more.</p>
+                <div class="suggestions">
+                    <button class="suggestion" data-q="What is the Inception project?">What is the Inception project?</button>
+                    <button class="suggestion" data-q="Explain the Docker architecture">Explain the Docker architecture</button>
+                    <button class="suggestion" data-q="What services are running?">What services are running?</button>
+                    <button class="suggestion" data-q="How does Nginx work in this setup?">How does Nginx work here?</button>
+                    <button class="suggestion" data-q="What are Docker volumes?">What are Docker volumes?</button>
+                    <button class="suggestion" data-q="How is WordPress configured?">How is WordPress configured?</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Input -->
+        <footer class="input-area">
+            <form class="input-form" id="input-form">
+                <input type="text" id="input" placeholder="Ask about Inception..." autocomplete="off" autofocus>
+                <button type="submit" id="send-btn" disabled>
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
+            </form>
+            <span class="input-hint">Inception AI — a static chatbot for the 42 project</span>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+    <script src="script.js"></script>
+</body>
+</html>
+
+
