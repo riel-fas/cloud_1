@@ -1,0 +1,15 @@
+---
+all:
+  children:
+    web:
+      hosts:
+        web_primary:
+          ansible_host: 192.0.2.10
+          ansible_user: azureuser
+          domain_name: primary.example.com
+          admin_allowed_cidr: 198.51.100.10/32
+        web_secondary:
+          ansible_host: 192.0.2.11
+          ansible_user: azureuser
+          domain_name: secondary.example.com
+          admin_allowed_cidr: 198.51.100.10/32
