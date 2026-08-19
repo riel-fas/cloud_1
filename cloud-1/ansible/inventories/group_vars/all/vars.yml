@@ -1,0 +1,55 @@
+---
+# Cloud-1 Non-sensitive Configuration Defaults
+
+# Project and directory paths
+project_name: cloud1
+app_root: /opt/cloud-1
+data_root: /opt/cloud-1/data
+backup_root: /opt/cloud-1/backups
+cert_root: /opt/cloud-1/certs
+nginx_conf_root: /opt/cloud-1/nginx
+
+# Service image versions (Official maintained images with explicit version pins)
+mariadb_image: "mariadb:11.4"
+wordpress_image: "wordpress:6-php8.3-fpm-alpine"
+phpmyadmin_image: "phpmyadmin:5.2-fpm-alpine"
+nginx_image: "nginx:stable-alpine"
+wpcli_image: "wordpress:cli-php8.3"
+
+# Network configuration
+docker_network_backend: cloud1_backend
+docker_network_frontend: cloud1_frontend
+
+# Application configuration
+domain_name: "cloud1.local"
+tls_mode: "self_signed"  # "self_signed" for local/evaluation testing, "certbot" for Let's Encrypt with public DNS
+letsencrypt_email: "admin@example.com"
+
+# WordPress configuration
+wp_title: "Cloud-1 Inception on Azure"
+wp_admin_user: "cloud_admin"
+wp_admin_email: "admin@cloud1.local"
+wp_user: "evaluator"
+wp_user_email: "evaluator@cloud1.local"
+
+# Database configuration
+db_name: "wordpress_db"
+db_user: "wp_user"
+db_host: "mariadb"
+db_port: 3306
+
+# Allowed public ports (Strict Cloud-1 compliance)
+allowed_public_ports:
+  - 22
+  - 80
+  - 443
+
+# Host user for deployment
+deploy_user: "{{ ansible_user | default('azureuser') }}"
+
+# Family tags receive security updates; record pulled digests before evaluation.
+secret_root: "{{ app_root }}/secrets"
+http_bind: "80:80"
+https_bind: "443:443"
+wp_uid: 82
+wp_gid: 82
