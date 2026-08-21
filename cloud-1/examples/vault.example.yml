@@ -1,0 +1,16 @@
+---
+# Cloud-1 Vault Example Template
+# DO NOT COMMIT REAL SECRETS TO VERSION CONTROL!
+#
+# To create an encrypted vault file for deployment:
+#   ansible-vault create inventories/group_vars/all/vault.yml
+#
+# To edit existing vault:
+#   ansible-vault edit inventories/group_vars/all/vault.yml
+#
+# Required variables schema:
+
+vault_db_root_password: "REPLACE_WITH_STRONG_DB_ROOT_PASSWORD"
+vault_db_password: "REPLACE_WITH_STRONG_DB_USER_PASSWORD"
+vault_wp_admin_password: "REPLACE_WITH_STRONG_WP_ADMIN_PASSWORD"
+vault_wp_user_password: "REPLACE_WITH_STRONG_WP_USER_PASSWORD"
