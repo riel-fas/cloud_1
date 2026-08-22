@@ -1,0 +1,7 @@
+---
+# Cloud-1 Mock Vault for Local Validation / Testing
+# WARNING: These are non-production dummy values used ONLY for syntax checking and test environments.
+vault_db_root_password: "mock_db_root_pass_dev_only"
+vault_db_password: "mock_db_user_pass_dev_only"
+vault_wp_admin_password: "mock_wp_admin_pass_dev_only"
+vault_wp_user_password: "mock_wp_user_pass_dev_only"
