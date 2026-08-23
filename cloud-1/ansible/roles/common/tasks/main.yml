@@ -1,0 +1,43 @@
+---
+# Common Role Main Tasks
+
+- name: Update apt cache if older than 1 hour
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create base project directories with restricted permissions
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
+    mode: "{{ item.mode | default('0750') }}"
+  loop:
+    - { path: "{{ app_root }}", mode: '0755' }
+    - { path: "{{ data_root }}", mode: '0750' }
+    - { path: "{{ backup_root }}", mode: '0700' }
+    - { path: "{{ cert_root }}", mode: '0700' }
+    - { path: "{{ secret_root }}", mode: '0700' }
+    - { path: "{{ nginx_conf_root }}", mode: '0755' }
+    - { path: "{{ nginx_conf_root }}/conf.d", mode: '0755' }
+    - { path: "/var/www/certbot", mode: '0755' }
+
+- name: Create database directory without resetting existing database ownership
+  ansible.builtin.file:
+    path: '{{ data_root }}/mariadb'
+    state: directory
+
+- name: Ensure WordPress uses the Alpine PHP service identity
+  ansible.builtin.file:
+    path: '{{ data_root }}/wordpress'
+    state: directory
+    owner: '{{ wp_uid }}'
+    group: '{{ wp_gid }}'
+    recurse: true
+
+- name: Configure host firewall (UFW)
+  ansible.builtin.include_tasks: firewall.yml
+
+- name: Install and configure Docker
+  ansible.builtin.include_tasks: docker.yml
