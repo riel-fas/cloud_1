@@ -1,0 +1,54 @@
+---
+# Docker Engine and Compose Plugin Installation (Official Docker Repository)
+# Ensures idempotent installation on fresh Ubuntu 22.04 LTS hosts.
+
+- name: Install prerequisite packages for Docker repository
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - python3-pip
+      - python3-yaml
+    state: present
+    update_cache: true
+
+- name: Create keyrings directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download Docker official GPG key
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+    force: false
+
+- name: Add Docker official apt repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [arch={{ {'x86_64': 'amd64', 'aarch64': 'arm64'}[ansible_architecture] }}
+      signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu
+      {{ ansible_distribution_release }} stable
+    state: present
+    filename: docker
+
+- name: Install Docker Engine, CLI, Containerd, and Docker Compose Plugin
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+    update_cache: true
+
+- name: Ensure Docker service is enabled and running
+  ansible.builtin.systemd:
+    name: docker
+    enabled: true
+    state: started
