@@ -1,0 +1,11 @@
+---
+# Handlers for common role
+
+- name: Restart docker
+  ansible.builtin.systemd:
+    name: docker
+    state: restarted
+
+- name: Reload ufw
+  community.general.ufw:
+    state: reloaded
