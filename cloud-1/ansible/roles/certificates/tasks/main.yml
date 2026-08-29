@@ -1,0 +1,8 @@
+---
+- name: Validate TLS mode
+  ansible.builtin.assert:
+    that:
+      - tls_mode in ['self_signed', 'certbot']
+
+- name: Prepare bootstrap certificate
+  ansible.builtin.include_tasks: self_signed.yml
