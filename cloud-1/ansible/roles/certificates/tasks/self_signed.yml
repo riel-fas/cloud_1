@@ -1,0 +1,76 @@
+---
+# Self-Signed TLS Certificate Generation (SAN Enabled)
+# Used for local testing, evaluation defense, and IP-based access without public DNS.
+
+- name: Check if TLS certificate already exists
+  ansible.builtin.stat:
+    path: "{{ cert_root }}/server.crt"
+  register: certificates_cert_stat
+
+- name: Check if TLS private key already exists
+  ansible.builtin.stat:
+    path: "{{ cert_root }}/server.key"
+  register: certificates_key_stat
+
+- name: Generate OpenSSL SAN configuration file
+  ansible.builtin.copy:
+    dest: "{{ cert_root }}/openssl_san.cnf"
+    mode: '0600'
+    content: |
+      [req]
+      default_bits = 4096
+      prompt = no
+      default_md = sha256
+      distinguished_name = dn
+      x509_extensions = v3_req
+
+      [dn]
+      C = FR
+      ST = Paris
+      L = Paris
+      O = 42School
+      OU = Cloud-1
+      CN = {{ domain_name }}
+
+      [v3_req]
+      basicConstraints = CA:FALSE
+      keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+      extendedKeyUsage = serverAuth
+      subjectAltName = @alt_names
+
+      [alt_names]
+      DNS.1 = {{ domain_name }}
+      DNS.2 = localhost
+      IP.1 = 127.0.0.1
+      {% if ansible_host is defined and ansible_host | ansible.builtin.regex_search('^[0-9.]+$') %}
+      IP.2 = {{ ansible_host }}
+      {% endif %}
+  register: certificates_certificate_config
+
+- name: Check certificate validity window
+  ansible.builtin.command: openssl x509 -checkend 2592000 -noout -in {{ cert_root }}/server.crt
+  register: certificates_certificate_validity
+  changed_when: false
+  failed_when: false
+
+- name: Generate self-signed certificate and private key with SAN
+  ansible.builtin.command: >
+    openssl req -x509 -nodes -days 365 -newkey rsa:4096
+    -keyout {{ cert_root }}/server.key
+    -out {{ cert_root }}/server.crt
+    -config {{ cert_root }}/openssl_san.cnf
+  when: >-
+    not certificates_cert_stat.stat.exists or not certificates_key_stat.stat.exists or
+    (tls_mode == "self_signed" and
+    (certificates_certificate_config.changed or certificates_certificate_validity.rc != 0))
+  changed_when: true
+
+- name: Ensure strict permissions on TLS private key and certificate
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    mode: "{{ item.mode }}"
+    owner: root
+    group: root
+  loop:
+    - { path: "{{ cert_root }}/server.key", mode: '0600' }
+    - { path: "{{ cert_root }}/server.crt", mode: '0644' }
