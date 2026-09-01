@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+[ "${RENEWED_LINEAGE:-}" = "/etc/letsencrypt/live/{{ domain_name }}" ] || exit 0
+install -m 0644 "$RENEWED_LINEAGE/fullchain.pem" '{{ cert_root }}/server.crt.new'
+install -m 0600 "$RENEWED_LINEAGE/privkey.pem" '{{ cert_root }}/server.key.new'
+mv '{{ cert_root }}/server.key.new' '{{ cert_root }}/server.key'
+mv '{{ cert_root }}/server.crt.new' '{{ cert_root }}/server.crt'
+docker exec '{{ project_name }}-nginx' nginx -t
+docker exec '{{ project_name }}-nginx' nginx -s reload
