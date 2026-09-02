@@ -1,0 +1,65 @@
+---
+- name: Install Certbot
+  ansible.builtin.apt:
+    name: certbot
+    state: present
+
+- name: Create certificate renewal hook directory
+  ansible.builtin.file:
+    path: /etc/letsencrypt/renewal-hooks/deploy
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Install certificate deployment hook
+  ansible.builtin.template:
+    src: deploy-certificate.sh.j2
+    dest: /etc/letsencrypt/renewal-hooks/deploy/cloud1-nginx
+    mode: '0700'
+
+- name: Obtain certificate after Nginx serves HTTP challenges
+  ansible.builtin.command:
+    argv:
+      - certbot
+      - certonly
+      - --webroot
+      - -w
+      - /var/www/certbot
+      - -d
+      - '{{ domain_name }}'
+      - --cert-name
+      - '{{ domain_name }}'
+      - --email
+      - '{{ letsencrypt_email }}'
+      - --agree-tos
+      - --non-interactive
+      - --keep-until-expiring
+    creates: '/etc/letsencrypt/live/{{ domain_name }}/fullchain.pem'
+
+- name: Synchronize issued certificates into container mount
+  ansible.builtin.copy:
+    src: '/etc/letsencrypt/live/{{ domain_name }}/{{ item.src }}'
+    dest: '{{ cert_root }}/{{ item.dest }}'
+    remote_src: true
+    mode: '{{ item.mode }}'
+  loop:
+    - {src: fullchain.pem, dest: server.crt, mode: '0644'}
+    - {src: privkey.pem, dest: server.key, mode: '0600'}
+  register: certificates_issued_certificate
+  no_log: true
+
+- name: Validate Nginx after certificate synchronization
+  ansible.builtin.command: docker exec {{ project_name }}-nginx nginx -t
+  changed_when: false
+
+- name: Reload Nginx after certificate change
+  ansible.builtin.command: docker exec {{ project_name }}-nginx nginx -s reload
+  when: certificates_issued_certificate.changed
+  changed_when: true
+
+- name: Enable automatic certificate renewal
+  ansible.builtin.systemd:
+    name: certbot.timer
+    enabled: true
+    state: started
