@@ -1,0 +1,121 @@
+name: {{ project_name }}
+services:
+  mariadb:
+    image: {{ mariadb_image }}
+    container_name: {{ project_name }}-mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+      MARIADB_DATABASE: {{ db_name | to_json }}
+      MARIADB_USER: {{ db_user | to_json }}
+      MARIADB_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_root_password, db_password]
+    volumes:
+      - {{ data_root }}/mariadb:/var/lib/mysql
+    networks: [backend]
+    healthcheck:
+      test: [CMD, healthcheck.sh, --connect, --innodb_initialized]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  wordpress:
+    image: {{ wordpress_image }}
+    container_name: {{ project_name }}-wordpress
+    restart: unless-stopped
+    environment: &wp_environment
+      WORDPRESS_DB_HOST: mariadb:3306
+      WORDPRESS_DB_NAME: {{ db_name | to_json }}
+      WORDPRESS_DB_USER: {{ db_user | to_json }}
+      WORDPRESS_DB_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
+    volumes:
+      - {{ data_root }}/wordpress:/var/www/html
+    networks: [backend, frontend]
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD-SHELL, "test -s /var/www/html/wp-config.php && php -r '$$s=@fsockopen(\"127.0.0.1\",9000); exit($$s ? 0 : 1);'"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  phpmyadmin:
+    image: {{ phpmyadmin_image }}
+    container_name: {{ project_name }}-phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mariadb
+      PMA_PORT: 3306
+      PMA_ABSOLUTE_URI: {{ ('https://' ~ domain_name ~ '/phpmyadmin/') | to_json }}
+      UPLOAD_LIMIT: 64M
+    volumes:
+      - phpmyadmin_static:/var/www/html
+      - phpmyadmin_sessions:/sessions
+    networks: [backend, frontend]
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD-SHELL, "php -r '$$s=@fsockopen(\"127.0.0.1\",9000); exit($$s ? 0 : 1);'"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  nginx:
+    image: {{ nginx_image }}
+    container_name: {{ project_name }}-nginx
+    restart: unless-stopped
+    ports:
+      - {{ http_bind | to_json }}
+      - {{ https_bind | to_json }}
+    volumes:
+      - {{ nginx_conf_root }}/nginx.conf:/etc/nginx/nginx.conf:ro
+      - {{ nginx_conf_root }}/conf.d:/etc/nginx/conf.d:ro
+      - {{ cert_root }}:/etc/nginx/ssl:ro
+      - {{ data_root }}/wordpress:/var/www/html:ro
+      - phpmyadmin_static:/var/www/phpmyadmin:ro
+      - {{ acme_root | default('/var/www/certbot') }}:/var/www/certbot:ro
+    networks: [frontend]
+    depends_on:
+      wordpress:
+        condition: service_healthy
+      phpmyadmin:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD-SHELL, "wget -q -O /dev/null http://127.0.0.1/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  wpcli:
+    image: {{ wpcli_image }}
+    profiles: [tools]
+    entrypoint: [wp]
+    user: "{{ wp_uid }}:{{ wp_gid }}"
+    working_dir: /var/www/html
+    environment:
+      <<: *wp_environment
+      HOME: /tmp
+    secrets: [db_password]
+    volumes:
+      - {{ data_root }}/wordpress:/var/www/html
+    networks: [backend]
+
+secrets:
+  db_root_password:
+    file: {{ secret_root }}/db_root_password
+  db_password:
+    file: {{ secret_root }}/db_password
+
+volumes:
+  phpmyadmin_static:
+  phpmyadmin_sessions:
+
+networks:
+  backend:
+    internal: true
+  frontend:
