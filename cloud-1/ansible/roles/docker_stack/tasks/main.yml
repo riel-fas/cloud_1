@@ -1,0 +1,73 @@
+---
+- name: Check for an existing database
+  ansible.builtin.stat:
+    path: '{{ data_root }}/mariadb/mysql'
+  register: docker_stack_existing_database
+
+- name: Read existing database credentials before replacement
+  ansible.builtin.slurp:
+    src: '{{ secret_root }}/{{ item }}'
+  loop: [db_root_password, db_password]
+  register: docker_stack_existing_secrets
+  when: docker_stack_existing_database.stat.exists
+  no_log: true
+
+- name: Refuse implicit database password rotation
+  ansible.builtin.assert:
+    that:
+      - docker_stack_existing_secrets.results[0].content | b64decode == vault_db_root_password
+      - docker_stack_existing_secrets.results[1].content | b64decode == vault_db_password
+    fail_msg: 'Changing initialized database credentials requires an explicit SQL rotation and synchronized secret update.'
+  when: docker_stack_existing_database.stat.exists
+  no_log: true
+
+- name: Deploy narrowly scoped database secret files
+  ansible.builtin.copy:
+    content: '{{ item.value }}'
+    dest: '{{ secret_root }}/{{ item.name }}'
+    owner: root
+    group: root
+    mode: '0444'
+  loop:
+    - {name: db_root_password, value: '{{ vault_db_root_password }}'}
+    - {name: db_password, value: '{{ vault_db_password }}'}
+  no_log: true
+  # Parent directory is root-only 0700. Mounted files must be readable by PHP UID 82.
+
+- name: Remove obsolete shared environment file
+  ansible.builtin.file:
+    path: '{{ app_root }}/.env'
+    state: absent
+
+- name: Deploy Compose configuration
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: '{{ app_root }}/docker-compose.yml'
+    mode: '0644'
+
+- name: Deploy Nginx configuration
+  ansible.builtin.template:
+    src: '{{ item.src }}'
+    dest: '{{ nginx_conf_root }}/{{ item.dest }}'
+    mode: '0644'
+  loop:
+    - {src: nginx/nginx.conf.j2, dest: nginx.conf}
+    - {src: nginx/default.conf.j2, dest: conf.d/default.conf}
+  register: docker_stack_nginx_configuration
+
+- name: Start services and wait for health checks
+  community.docker.docker_compose_v2:
+    project_src: '{{ app_root }}'
+    state: present
+    remove_orphans: true
+    wait: true
+    wait_timeout: 240
+
+- name: Validate Nginx configuration
+  ansible.builtin.command: docker exec {{ project_name }}-nginx nginx -t
+  changed_when: false
+
+- name: Reload updated Nginx configuration
+  ansible.builtin.command: docker exec {{ project_name }}-nginx nginx -s reload
+  when: docker_stack_nginx_configuration.changed
+  changed_when: true
