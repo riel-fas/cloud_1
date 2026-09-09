@@ -1,0 +1,68 @@
+---
+- name: Verify application database credentials before installation
+  ansible.builtin.command:
+    argv: [docker, compose, run, --rm, wpcli, db, check]
+    chdir: '{{ app_root }}'
+  changed_when: false
+  no_log: true
+
+- name: Check WordPress installation
+  ansible.builtin.command:
+    argv: [docker, compose, run, --rm, wpcli, core, is-installed]
+    chdir: '{{ app_root }}'
+  register: wordpress_init_wp_installed
+  failed_when: wordpress_init_wp_installed.rc not in [0, 1]
+  changed_when: false
+
+- name: Install WordPress with password on standard input
+  ansible.builtin.command:
+    argv:
+      - docker
+      - compose
+      - run
+      - --rm
+      - -T
+      - wpcli
+      - core
+      - install
+      - '--url=https://{{ domain_name }}'
+      - '--title={{ wp_title }}'
+      - '--admin_user={{ wp_admin_user }}'
+      - '--admin_email={{ wp_admin_email }}'
+      - --skip-email
+      - --prompt=admin_password
+    stdin: '{{ vault_wp_admin_password }}'
+    chdir: '{{ app_root }}'
+  when: wordpress_init_wp_installed.rc == 1
+  changed_when: true
+  no_log: true
+
+- name: Check editor account
+  ansible.builtin.command:
+    argv: [docker, compose, run, --rm, wpcli, user, get, '{{ wp_user }}', '--field=ID']
+    chdir: '{{ app_root }}'
+  register: wordpress_init_wp_editor
+  failed_when: wordpress_init_wp_editor.rc not in [0, 1]
+  changed_when: false
+
+- name: Create editor with password on standard input
+  ansible.builtin.command:
+    argv: [docker, compose, run, --rm, -T, wpcli, user, create, '{{ wp_user }}', '{{ wp_user_email }}', '--role=editor', '--prompt=user_pass']
+    stdin: '{{ vault_wp_user_password }}'
+    chdir: '{{ app_root }}'
+  when: wordpress_init_wp_editor.rc == 1
+  changed_when: true
+  no_log: true
+
+- name: Read current site URL
+  ansible.builtin.command:
+    argv: [docker, compose, run, --rm, wpcli, option, get, siteurl]
+    chdir: '{{ app_root }}'
+  register: wordpress_init_current_site_url
+  changed_when: false
+
+- name: Prevent silent domain migration on existing data
+  ansible.builtin.assert:
+    that:
+      - wordpress_init_current_site_url.stdout | trim == 'https://' ~ domain_name
+    fail_msg: 'Existing site has another URL. Back up and perform an explicit WP-CLI search-replace migration.'
