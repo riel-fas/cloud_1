@@ -1,0 +1,84 @@
+---
+# Cloud-1 Master Deployment Playbook
+# Automated, idempotent deployment to Ubuntu 22.04 LTS hosts.
+#
+# Usage:
+#   ansible-playbook -i inventories/hosts.yml site.yml --ask-vault-pass
+# Or with a vault password file:
+#   ansible-playbook -i inventories/hosts.yml site.yml --vault-password-file ~/.vault_pass
+
+- name: Deploy Cloud-1 Infrastructure Stack
+  hosts: web
+  become: true
+  gather_facts: true
+
+  # Load encrypted vault variables or mock vault if testing
+  vars_files:
+    - "{{ vault_file | default('inventories/group_vars/all/vault.yml') }}"
+
+  pre_tasks:
+    - name: Require deployment configuration and strong non-placeholder secrets
+      ansible.builtin.assert:
+        that:
+          - domain_name is match('^[a-zA-Z0-9][a-zA-Z0-9.-]+$')
+          - admin_allowed_cidr is defined
+          - admin_allowed_cidr != '0.0.0.0/0'
+          - db_name is match('^[a-zA-Z0-9_]+$')
+          - db_user is match('^[a-zA-Z0-9_]+$')
+    - name: Check secret requirements without exposing values
+      ansible.builtin.set_fact:
+        secret_validation_results: >-
+          {{ (secret_validation_results | default([])) +
+             [{'name': item, 'valid':
+               (secret_value is string and secret_value | length >= 20 and
+                'REPLACE_' not in secret_value and
+                secret_value.splitlines() | length == 1)}] }}
+      vars:
+        secret_value: "{{ lookup('ansible.builtin.vars', item, default='') }}"
+      loop:
+        - vault_db_root_password
+        - vault_db_password
+        - vault_wp_admin_password
+        - vault_wp_user_password
+      no_log: true
+
+    - name: Report invalid secret variable names only
+      ansible.builtin.assert:
+        that:
+          - item.valid
+        fail_msg: >-
+          {{ item.name }} must be a quoted string of at least 20 characters,
+          with no REPLACE_ placeholder or line breaks. Edit the encrypted vault;
+          do not share its contents.
+        quiet: true
+      loop: '{{ secret_validation_results }}'
+      loop_control:
+        label: '{{ item.name }}'
+
+  roles:
+    - role: common
+      tags: [common, system, docker, firewall]
+
+    - role: certificates
+      tags: [certificates, tls, ssl]
+
+    - role: docker_stack
+      tags: [docker_stack, compose, services]
+
+    - role: wordpress_init
+      tags: [wordpress_init, wp]
+
+  post_tasks:
+    - name: Issue and configure trusted TLS certificate
+      ansible.builtin.include_role:
+        name: certificates
+        tasks_from: certbot
+      when: tls_mode == 'certbot'
+
+    - name: Deployment completion notification
+      ansible.builtin.debug:
+        msg: >
+          Cloud-1 deployment completed successfully on {{ inventory_hostname }} ({{ ansible_host }}).
+          Domain: {{ domain_name }}
+          Access URL: https://{{ domain_name }}/
+          phpMyAdmin URL: https://{{ domain_name }}/phpmyadmin/
