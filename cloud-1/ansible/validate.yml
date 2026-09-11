@@ -1,0 +1,58 @@
+---
+- name: Validate deployed application locally on each target
+  hosts: web
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Inspect required containers
+      ansible.builtin.command:
+        argv: [docker, inspect, '{{ project_name }}-{{ item }}']
+      loop: [mariadb, wordpress, phpmyadmin, nginx]
+      register: containers
+      changed_when: false
+    - name: Assert exact running and health states
+      ansible.builtin.assert:
+        that:
+          - (item.stdout | from_json)[0].State.Running
+          - (item.stdout | from_json)[0].State.Health.Status == 'healthy'
+      loop: '{{ containers.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+    - name: Inspect database port bindings
+      ansible.builtin.assert:
+        that:
+          - not ((containers.results[0].stdout | from_json)[0].HostConfig.PortBindings | default({}))
+    - name: Verify HTTP redirect
+      ansible.builtin.uri:
+        url: http://127.0.0.1/
+        headers:
+          Host: '{{ domain_name }}'
+        status_code: 301
+        follow_redirects: none
+      register: redirect_result
+    - name: Verify redirect destination
+      ansible.builtin.assert:
+        that:
+          - redirect_result.location == 'https://' ~ domain_name ~ '/'
+    - name: Check public application paths from target
+      ansible.builtin.uri:
+        url: 'https://{{ domain_name }}{{ item }}'
+        validate_certs: '{{ tls_mode == "certbot" }}'
+        return_content: true
+        status_code: 200
+      loop: ['/', '/phpmyadmin/']
+      register: pages
+    - name: Verify phpMyAdmin response
+      ansible.builtin.assert:
+        that:
+          - "'phpMyAdmin' in pages.results[1].content"
+    - name: Verify installed WordPress and database connectivity
+      ansible.builtin.command:
+        argv: [docker, compose, run, --rm, wpcli, core, is-installed]
+        chdir: '{{ app_root }}'
+      changed_when: false
+    - name: Report actual scope of checks
+      ansible.builtin.debug:
+        msg: >-
+          Application checks passed.
+          External port scanning, reboot persistence, parallel deployment, certificate renewal and backup restoration need separate tests.
