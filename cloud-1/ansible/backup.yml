@@ -1,0 +1,40 @@
+---
+- name: Back up application data on the host
+  hosts: web
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Generate backup identifier
+      ansible.builtin.set_fact:
+        backup_timestamp: "{{ now(utc=true, fmt='%Y%m%dT%H%M%SZ') }}"
+    - name: Create protected backup directory
+      ansible.builtin.file:
+        path: '{{ backup_root }}'
+        state: directory
+        mode: '0700'
+    - name: Dump database using container secret
+      ansible.builtin.shell: |
+        set -eu
+        umask 077
+        docker compose exec -T mariadb sh -c '
+          export MYSQL_PWD="$(cat /run/secrets/db_root_password)"
+          exec mariadb-dump -uroot --single-transaction --routines --triggers "$MARIADB_DATABASE"
+        ' > {{ (backup_root ~ '/mariadb_' ~ backup_timestamp ~ '.sql.tmp') | quote }}
+        mv {{ (backup_root ~ '/mariadb_' ~ backup_timestamp ~ '.sql.tmp') | quote }} {{ (backup_root ~ '/mariadb_' ~ backup_timestamp ~ '.sql') | quote }}
+      args:
+        chdir: '{{ app_root }}'
+      changed_when: true
+      no_log: true
+    - name: Archive WordPress files
+      community.general.archive:
+        path: '{{ data_root }}/wordpress'
+        dest: '{{ backup_root }}/wordpress_{{ backup_timestamp }}.tar.gz'
+        format: gz
+        mode: '0600'
+    - name: Explain backup consistency limits
+      ansible.builtin.debug:
+        msg: >-
+          Backup saved on this host.
+          Copy it off-host.
+          For a coordinated DB/files snapshot, stop writes during backup.
+          Restore testing is required before relying on it.
