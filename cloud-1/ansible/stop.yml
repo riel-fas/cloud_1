@@ -1,0 +1,22 @@
+---
+# Cloud-1 Graceful Service Stop Playbook
+# Safely stops running Docker containers without altering persistent data.
+#
+# Usage:
+#   ansible-playbook -i inventories/hosts.yml stop.yml
+
+- name: Stop Cloud-1 Stack
+  hosts: web
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Gracefully stop all Docker Compose containers
+      ansible.builtin.command:
+        cmd: docker compose stop
+        chdir: "{{ app_root }}"
+      register: stop_output
+
+    - name: Display service status
+      ansible.builtin.debug:
+        msg: "All Cloud-1 containers have been gracefully stopped. Persistent data remains intact."
