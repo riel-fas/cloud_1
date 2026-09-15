@@ -1,0 +1,48 @@
+---
+# Cloud-1 Destructive Teardown Playbook
+# WARNING: THIS PLAYBOOK PERMANENTLY DESTROYS ALL DATABASE AND WORDPRESS DATA!
+#
+# To execute this playbook, you MUST explicitly provide the confirmation variable:
+#   ansible-playbook -i inventories/hosts.yml destroy.yml -e "destroy_confirmation=I_CONFIRM_DATA_DESTRUCTION"
+
+- name: Destroy Cloud-1 Stack and Data
+  hosts: web
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: "Safety check: Verify explicit user confirmation"
+      ansible.builtin.assert:
+        that:
+          - destroy_confirmation is defined
+          - destroy_confirmation == "I_CONFIRM_DATA_DESTRUCTION"
+        fail_msg: >
+          DESTRUCTIVE TEARDOWN ABORTED!
+          To execute this playbook, you must pass: -e "destroy_confirmation=I_CONFIRM_DATA_DESTRUCTION"
+        success_msg: "Safety confirmation verified. Proceeding with destructive teardown."
+
+    - name: Guard destructive data path
+      ansible.builtin.assert:
+        that:
+          - data_root.startswith('/opt/')
+          - data_root | length > 10
+          - "'..' not in data_root"
+
+    - name: Tear down Docker Compose containers, networks, and named volumes
+      ansible.builtin.command:
+        cmd: docker compose down -v --remove-orphans
+        chdir: "{{ app_root }}"
+      changed_when: true
+
+    - name: Remove host data directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ data_root }}/mariadb"
+        - "{{ data_root }}/wordpress"
+
+
+    - name: Teardown notification
+      ansible.builtin.debug:
+        msg: "All Cloud-1 containers, networks, volumes, and persistent data have been purged."
