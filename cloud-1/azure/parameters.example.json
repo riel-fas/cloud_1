@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "eastus"
+    },
+    "vmSize": {
+      "value": "Standard_B1s"
+    },
+    "adminUsername": {
+      "value": "azureuser"
+    },
+    "adminSshPublicKey": {
+      "value": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEXAMPLEKEYREPLACEWITHYOURACTUALPUBLICKEY user@workstation"
+    },
+    "adminAllowedCidr": {
+      "value": "203.0.113.45/32"
+    },
+    "dnsLabelPrefix": {
+      "value": "cloud1-student-unique-name"
+    },
+    "osDiskType": {
+      "value": "StandardSSD_LRS"
+    },
+    "osDiskSizeGB": {
+      "value": 30
+    }
+  }
+}
