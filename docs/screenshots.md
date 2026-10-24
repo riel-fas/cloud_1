@@ -21,7 +21,7 @@ The first Azure deployment and trusted HTTPS have completed. The remaining test 
 |---|---|---|
 | `07-acceptance-recap.png` | Run `validate.yml` | Acceptance playbook completed with no failed or unreachable hosts. |
 | `08-second-deployment.png` | Run `site.yml` again after TLS setup | Repeat-deployment recap. If it reports changes, inspect and explain them; do not edit the output to show zero. |
-| `09-reboot-persistence.png` | Save a post, image and account; reboot the VM and check them again | The same saved content after reboot. Keep a short written before/after record; a single screenshot cannot prove the entire sequence. |
+| `09a-before-reboot.png`, `09b-after-reboot.png`, `09c-after-reboot-containers.png` | Save a post, image and account; reboot the VM and check them again | The same saved content after reboot. Keep a short written before/after record; a single screenshot cannot prove the entire sequence. |
 | `10-parallel-deployment.png` | Deploy to two independent hosts in one Ansible run | Both distinct inventory hosts in the successful recap. |
 | `11-backup-restore.png` | Restore a backup into a separate test instance | Restored content and the verification result. A backup file listing alone is not evidence of successful restoration. |
 

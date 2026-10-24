@@ -4,7 +4,7 @@ Updated: 2026-10-24.
 
 **Status: the first Azure application deployment has completed, including Let's Encrypt issuance.** The user supplied the deployment log with `ok=54`, `changed=5`, `unreachable=0`, `failed=0` and confirmed that the websites open without a certificate warning. The local checks described below were performed before that deployment. The earlier “28/28” static result did not prove readiness and is superseded by the checks documented here.
 
-The next milestone is the Azure acceptance run, followed by a repeat deployment, host reboot, second independent host and restore test. Those checks are not marked as passed without their results.
+The Azure application validation passed (`ok=9`, `changed=0`, `failed=0`, `unreachable=0`). A full deployment rerun passed (`ok=53`, `changed=1`, `failed=0`, `unreachable=0`); only the apt cache refresh reported a change. After a VM reboot, the boot ID changed, all four containers recovered healthy, and the user confirmed the saved post and image loaded in a fresh private window. Screenshots are linked in the root README. Parallel deployment, external port checks, certificate renewal and backup restoration remain unverified.
 
 ## Corrections
 
@@ -66,13 +66,13 @@ flowchart LR
 |---|---|---|
 | Fresh Ubuntu automation and roles | common, certificates, docker_stack, wordpress_init | First Azure deployment completed; log supplied |
 | Compose and separate services | Four long-running services plus one-shot WP-CLI | Local integration passed |
-| Working WordPress/database/phpMyAdmin | WordPress database integration and phpMyAdmin web endpoint | Interactive phpMyAdmin login/SQL operation on staging |
-| Restart and persistent data | Docker enabled at boot; restart policies; persistent storage | Actual host reboot with post/account/upload checks |
+| Working WordPress/database/phpMyAdmin | WordPress database integration and phpMyAdmin web endpoint | phpMyAdmin login and WordPress table listing confirmed; separate SQL operation not recorded |
+| Restart and persistent data | Docker enabled at boot; restart policies; persistent storage | Host reboot, automatic recovery, post and upload verified; separate test-user login pending |
 | Parallel deployment | Independent host inventory and per-host domains; forks enabled | Two fresh hosts deployed together |
 | Limited public access | NSG/UFW and only web ports published | External port scan from a separate machine |
 | TLS and URL routing | Nginx routes `/` and `/phpmyadmin/`; bootstrap then Certbot | Issuance completed and browser trust confirmed; renewal dry run pending |
-| Portable, idempotent automation | Parameterized paths and hosts; state-aware tasks | Full playbook second run on Ubuntu; WP initialization already tested twice |
-| No hard-coded production secrets | Vault placeholders; narrowly mounted runtime secrets | Supply real encrypted vault before deployment |
+| Portable, idempotent automation | Parameterized paths and hosts; state-aware tasks | Full Azure rerun passed; only apt cache refresh changed |
+| No hard-coded production secrets | Vault placeholders; narrowly mounted runtime secrets | Encrypted local vault used for deployment and excluded from Git |
 
 ## Remaining limitations and deployment gates
 

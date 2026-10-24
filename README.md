@@ -4,7 +4,7 @@ Cloud-1 is a 42 system administration project about deploying a WordPress site t
 
 This implementation uses Azure for the server, Bicep for the infrastructure, Ansible for configuration, and Docker Compose for the application. WordPress, MariaDB, phpMyAdmin and Nginx run in separate containers. Nginx handles HTTPS and routes requests to the right PHP service.
 
-The first Azure deployment is running in France Central on Ubuntu 22.04.5 LTS. The deployment playbook completed with no failures, and the site opens over HTTPS without a browser certificate warning. That does not mean every evaluation test is finished: reboot persistence, parallel deployment and backup restoration still need to be demonstrated on Azure.
+The first Azure deployment is running in France Central on Ubuntu 22.04.5 LTS. The deployment playbook completed with no failures, and the site opens over HTTPS without a browser certificate warning. That does not mean every evaluation test is finished: parallel deployment and backup restoration still need to be demonstrated on Azure. The reboot check below records automatic container recovery and the saved post and image displayed afterward.
 
 - [WordPress](https://cloud1-student-6be78209.francecentral.cloudapp.azure.com/)
 - [WordPress administration](https://cloud1-student-6be78209.francecentral.cloudapp.azure.com/wp-admin/)
@@ -24,9 +24,10 @@ The inventory supports several independent servers. Each host has its own addres
 
 ```mermaid
 flowchart TD
-    Controller[Mac or Linux computer running Ansible] -->|SSH: 22, administrator IP only| Host[Ubuntu VM on Azure]
+    Controller[Mac or Linux computer running Ansible] -->|SSH: 22, administrator IP only| SSH[SSH service]
     Browser[Browser] -->|HTTP: 80 / HTTPS: 443| Nginx[Nginx container]
     subgraph Host[Ubuntu VM on Azure]
+        SSH
         Nginx -->|FastCGI| WordPress[WordPress PHP-FPM]
         Nginx -->|FastCGI| phpMyAdmin[phpMyAdmin PHP-FPM]
         WordPress --> Database[MariaDB]
@@ -318,9 +319,9 @@ This checks container state and health, database port bindings, HTTP redirect, H
 | Fresh Ubuntu host deployment on Azure | Completed; `failed=0`, `unreachable=0` |
 | Let's Encrypt issuance and Nginx reload | Completed in the Azure deployment |
 | Browser certificate warning | None reported when opening the site |
-| Full Azure acceptance playbook | Result not yet recorded |
-| Full deployment rerun after trusted TLS setup | Result not yet recorded |
-| Reboot persistence on Azure | Pending |
+| Azure application validation (`validate.yml`) | Passed: `ok=9`, `changed=0`, `unreachable=0`, `failed=0` |
+| Full deployment rerun after trusted TLS setup | Passed: `ok=53`, `changed=1`, `unreachable=0`, `failed=0`. Only the apt cache refresh reported a change; application configuration and services reported no changes. |
+| Reboot persistence on Azure | Boot ID changed; all four containers recovered healthy. Post and uploaded image verified in a fresh private window after reboot. Separate test-user login not yet recorded. |
 | Second server deployed in parallel | Pending |
 | Backup restoration and renewal dry run | Pending |
 
@@ -389,9 +390,43 @@ Deleting the Azure resource group removes its resources, including the VM and di
 
 ## Screenshots
 
+The deployed WordPress homepage:
+
+![WordPress homepage on Azure](docs/screenshots/01-wordpress-https.png)
+
+Brave confirms a secure connection and a valid certificate for the deployed domain:
+
+![Browser confirms secure HTTPS and a valid certificate](docs/screenshots/02-tls-certificate.png)
+
+All four services are running and healthy. Only Nginx publishes host ports, on 80 and 443:
+
+![Docker Compose status showing four healthy containers](docs/screenshots/04-containers.png)
+
+phpMyAdmin displays the WordPress database and its 12 tables:
+
+![WordPress database structure in phpMyAdmin](docs/screenshots/05-phpmyadmin.png)
+
+Azure inbound rules for SSH, HTTP and HTTPS. The SSH source is hidden in this capture; HTTP and HTTPS allow public access:
+
+![Azure network security group inbound rules](docs/screenshots/06-azure-network-rules.png)
+
+The application validation playbook completed with nine successful tasks and no failures. This playbook does not cover reboot persistence, external port checks, parallel deployment, certificate renewal or backup restoration. The separate reboot test is recorded below.
+
+![Successful Ansible application validation recap](docs/screenshots/07-acceptance-recap.png)
+
+The full deployment rerun succeeded. Its single reported change was refreshing the apt cache; application configuration, containers and certificates reported no changes.
+
+![Successful repeat deployment with one apt cache refresh](docs/screenshots/08-second-deployment.png)
+
+[Before-reboot record: published post and uploaded image](docs/screenshots/09a-before-reboot.png). On October 24, 2026, the VM boot ID changed from `08ae9daf-c606-45c1-8767-ea3882777093` to `212ab3c7-4518-4363-80f2-850a2f670aa7`. All four containers recovered healthy without rerunning deployment, and the post and image were verified afterward in a fresh private browser window.
+
+![Persistence test post and uploaded image after reboot](docs/screenshots/09b-after-reboot.png)
+
+![New boot ID and four healthy containers after reboot](docs/screenshots/09c-after-reboot-containers.png)
+
 The subject does not require screenshots, but they make the results easier to review. Save real captures under `docs/screenshots/` and follow [the screenshot checklist](docs/screenshots.md).
 
-The most useful captures are the WordPress page over HTTPS, certificate details, successful deployment recap, container status, phpMyAdmin tables and restricted Azure inbound rules. Add reboot and parallel-deployment screenshots only after those tests have actually been completed. There are no fabricated screenshots or broken image placeholders in this README.
+The most useful captures are the WordPress page over HTTPS, certificate details, successful deployment recap, container status, phpMyAdmin tables and restricted Azure inbound rules. Add reboot and parallel-deployment screenshots only after those tests have actually been completed. Only captures of completed work are included.
 
 ## Known limits
 
