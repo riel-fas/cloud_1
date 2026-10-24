@@ -94,15 +94,45 @@ See the [readiness report](cloud-1/READINESS_REPORT.md) for detailed evidence an
 
 ## Screenshots
 
-The running WordPress site:
+WordPress homepage:
 
-![WordPress homepage on Azure](docs/screenshots/01-wordpress-https.png)
+![WordPress homepage](docs/screenshots/01-wordpress-https.png)
 
-All four containers healthy after reboot:
+Browser confirms a secure connection and valid certificate:
 
-![Containers recovered after VM reboot](docs/screenshots/09c-after-reboot-containers.png)
+![Browser confirms a secure connection and valid certificate](docs/screenshots/02-tls-certificate.png)
 
-[Browse all screenshots](docs/screenshots/README.md), including HTTPS, phpMyAdmin, firewall rules, validation and before/after reboot captures.
+Four healthy application containers:
+
+![Four healthy application containers](docs/screenshots/04-containers.png)
+
+WordPress database tables in phpMyAdmin:
+
+![WordPress database tables in phpMyAdmin](docs/screenshots/05-phpmyadmin.png)
+
+Azure inbound rules; SSH source hidden:
+
+![Azure inbound rules; SSH source hidden](docs/screenshots/06-azure-network-rules.png)
+
+Application validation: nine successful tasks, no failures:
+
+![Application validation: nine successful tasks, no failures](docs/screenshots/07-acceptance-recap.png)
+
+Repeat deployment: only the apt cache refresh changed:
+
+![Repeat deployment: only the apt cache refresh changed](docs/screenshots/08-second-deployment.png)
+
+Post and uploaded image before reboot:
+
+![Post and uploaded image before reboot](docs/screenshots/09a-before-reboot.png)
+
+The same post and image after reboot:
+
+![The same post and image after reboot](docs/screenshots/09b-after-reboot.png)
+
+New boot ID and four healthy containers after reboot:
+
+![New boot ID and four healthy containers after reboot](docs/screenshots/09c-after-reboot-containers.png)
 
 ## Operations
 
