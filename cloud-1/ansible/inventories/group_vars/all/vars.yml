@@ -9,7 +9,7 @@ backup_root: /opt/cloud-1/backups
 cert_root: /opt/cloud-1/certs
 nginx_conf_root: /opt/cloud-1/nginx
 
-# Service image versions (Official maintained images with explicit version pins)
+# Service image versions (mutable family tags, not immutable digest pins)
 mariadb_image: "mariadb:11.4"
 wordpress_image: "wordpress:6-php8.3-fpm-alpine"
 phpmyadmin_image: "phpmyadmin:5.2-fpm-alpine"

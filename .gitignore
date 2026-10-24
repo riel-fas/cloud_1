@@ -9,6 +9,13 @@ __pycache__/
 .env
 .env.*
 vault-password*
+secrets/
+*.sql
+*.sql.gz
+*.tfstate
+*.tfstate.*
+.azure/
+cloud-1/ansible/inventories/hosts.new
 backups/
 evidence/
 reference/inventory/hosts.yml

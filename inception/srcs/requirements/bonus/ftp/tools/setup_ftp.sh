@@ -22,7 +22,6 @@ chown -R ${FTP_USER}:${FTP_USER} /var/log/vsftpd
 
 echo "FTP server configured!"
 echo "User: ${FTP_USER}"
-echo "Password: ${FTP_PASSWORD}"
 
 #Start vsftpd
 echo "Starting vsftpd..."

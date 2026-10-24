@@ -1,0 +1,7 @@
+---
+# Lint must work without production inventory or vault access.
+exclude_paths:
+  - cloud-1/ansible/inventories/hosts.yml
+  - cloud-1/ansible/inventories/group_vars/all/vault.yml
+extra_vars:
+  vault_file: ../examples/vault.example.yml

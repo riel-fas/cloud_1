@@ -8,6 +8,17 @@ spec=importlib.util.spec_from_file_location('inventory_writer',ROOT/'azure/write
 writer=importlib.util.module_from_spec(spec);spec.loader.exec_module(writer)
 
 class RegressionTests(unittest.TestCase):
+    def test_deployment_rejects_published_mock_passwords(self):
+        play = yaml.safe_load((ROOT/'ansible/site.yml').read_text())[0]
+        task = next(t for t in play['pre_tasks'] if t['name'] == 'Check secret requirements without exposing values')
+        template = environment().from_string(task['ansible.builtin.set_fact']['secret_validation_results'])
+        mock = yaml.safe_load((ROOT/'examples/vault.mock.yml').read_text())
+        for value in [*mock.values(), 'REPLACE_WITH_A_LONG_PASSWORD', 'short', 'x' * 20 + '\nextra']:
+            result = yaml.safe_load(template.render(item='test', secret_value=value, secret_validation_results=[]))
+            self.assertFalse(result[0]['valid'])
+        result = yaml.safe_load(template.render(item='test', secret_value='a' * 48, secret_validation_results=[]))
+        self.assertTrue(result[0]['valid'])
+
     def test_invalid_yaml_rejected(self):
         with self.assertRaises(yaml.YAMLError):
             parse_yaml('key: [unterminated')

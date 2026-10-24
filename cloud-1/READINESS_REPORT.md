@@ -78,10 +78,10 @@ flowchart LR
 
 1. Subscription and quotas were checked before deployment: 6 regional vCPUs and 10 Basv2 family vCPUs were available. The original credit balance was $100; ongoing balance and expiry still need monitoring.
 2. The first host has working DNS, an administrator CIDR, and SSH key access. Keep local inventory and credentials outside Git.
-3. The full `site.yml` has completed on Ubuntu 22.04.5 LTS in Azure. Run `validate.yml` and retain its result; deployment completion alone does not establish all acceptance criteria.
+3. The full `site.yml` has completed on Ubuntu 22.04.5 LTS in Azure. `validate.yml` passed with nine successful tasks; this does not establish all acceptance criteria.
 4. Public HTTP-01 issuance completed and the user confirmed browser-trusted HTTPS. Run `certbot renew --dry-run` to test renewal separately.
-5. Run full repeat-deployment, reboot and parallel-host tests. Zero changes on the WordPress role is narrower than full-playbook idempotency.
-6. Verify phpMyAdmin login and an actual SQL query. A login-page HTTP 200 alone does not establish that workflow.
+5. Full repeat deployment and reboot recovery have been checked. Parallel-host deployment and a separate test-user login after reboot remain pending. The full rerun changed only the apt cache.
+6. phpMyAdmin login and table listing were verified. A separate SQL operation has not been recorded.
 7. Restore a backup into a separate disposable environment and verify content. Backups are initially on-host, and database/files are not an atomic coordinated snapshot; stop writes when consistency across both is required.
 8. Image family tags are mutable. Record/pin reviewed digests before evaluation. For phpMyAdmin upgrades, refresh only its static-files volume deliberately; do not delete application/database volumes.
 9. Confirm the subject's “root account” sentence with the campus. Neither sudo nor direct-root SSH has been declared the definitive interpretation.

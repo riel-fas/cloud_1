@@ -1,3 +1,5 @@
+> Reference project only. The Azure deployment lives in [`cloud-1/`](../cloud-1/). This older stack exposes FTP and extra administration ports and passes credentials through environment variables; do not use it as the public Azure deployment.
+
 <div align="center">
 
 # 🐳 Inception — 42 School Project
@@ -254,7 +256,7 @@ Sensitive data (passwords, tokens) should never be stored in plain environment v
 - Access is controlled — only the container that needs it gets it
 
 **This project's approach:**  
-Secrets are stored as text files in the `secrets/` directory and injected into containers via Docker Compose's `secrets:` directive. Entrypoint scripts read from `/run/secrets/` instead of environment variables wherever possible.
+This reference Compose file loads credentials from an ignored `.env` file. It does not currently mount Docker secrets. The Cloud-1 implementation uses scoped secret files instead.
 
 > ⚠️ The `secrets/` directory and the `.env` are listed in `.gitignore` and should **never** be committed to version control.
 

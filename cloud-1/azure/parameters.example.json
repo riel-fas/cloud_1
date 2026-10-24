@@ -12,7 +12,7 @@
       "value": "azureuser"
     },
     "adminSshPublicKey": {
-      "value": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEXAMPLEKEYREPLACEWITHYOURACTUALPUBLICKEY user@workstation"
+      "value": "REPLACE_WITH_YOUR_RSA_PUBLIC_KEY"
     },
     "adminAllowedCidr": {
       "value": "203.0.113.45/32"

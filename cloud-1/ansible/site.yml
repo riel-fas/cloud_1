@@ -32,6 +32,7 @@
              [{'name': item, 'valid':
                (secret_value is string and secret_value | length >= 20 and
                 'REPLACE_' not in secret_value and
+                not secret_value.startswith('mock_') and
                 secret_value.splitlines() | length == 1)}] }}
       vars:
         secret_value: "{{ lookup('ansible.builtin.vars', item, default='') }}"
@@ -48,7 +49,7 @@
           - item.valid
         fail_msg: >-
           {{ item.name }} must be a quoted string of at least 20 characters,
-          with no REPLACE_ placeholder or line breaks. Edit the encrypted vault;
+          with no REPLACE_ placeholder, mock_ prefix or line breaks. Edit the encrypted vault;
           do not share its contents.
         quiet: true
       loop: '{{ secret_validation_results }}'
