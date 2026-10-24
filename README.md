@@ -1,4 +1,4 @@
-# Cloud-1
+# Cloud-1-AZURE
 
 Automated deployment of WordPress on Azure for the 42 Cloud-1 project. Bicep creates the infrastructure, Ansible configures the Ubuntu server, and Docker Compose runs Nginx, WordPress, MariaDB and phpMyAdmin.
 
