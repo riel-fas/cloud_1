@@ -1,6 +1,6 @@
 # Cloud-1 implementation
 
-The main [project README](../README.md) contains the architecture, setup instructions, Azure deployment steps, Ansible commands, application access and operating notes.
+The main [project README](../README.md) contains the architecture, deployment commands and verified results. The [deployment guide](../docs/deployment.md) covers full setup and operations.
 
 - [Deployment evidence and remaining checks](READINESS_REPORT.md)
 - [Screenshots to capture](../docs/screenshots.md)
